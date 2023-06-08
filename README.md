@@ -8,4 +8,4 @@ docker-compose build && docker-compose up
 ```console
 pip3 install -r requirements.txt
 python3 client.py
-``
+```

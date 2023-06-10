@@ -6,9 +6,12 @@ import string
 from enum import Enum
 import os
 import time
-
+import sys
+sys.path.append('protos/.')
 import protos.engine_pb2 as engine_pb2
 import protos.engine_pb2_grpc as engine_pb2_grpc
+from aio_pika import ExchangeType, connect
+from aio_pika.abc import AbstractIncomingMessage
 
 from roles import *
 
@@ -17,6 +20,11 @@ class MessageType(Enum):
     DEATH = 2
     PUBLISH = 3
     END = 4
+
+
+async def on_message(message: AbstractIncomingMessage) -> None:
+    async with message.process():
+        print(f"[x] {message.body!r}")
 
 class RandomPlayer:
     def __init__(self, stub: engine_pb2_grpc.EngineServerStub):
@@ -96,31 +104,33 @@ class RandomPlayer:
                     self.is_alive = False
     
     async def start_game(self):
-        if not await self.want_to_start():
-            exit()
-        await self.get_players()
-        await asyncio.sleep(3)
-        for i in range(50):
-            if not self.is_alive or self.game_end:
-                break
-            if self.time == 'night':
-                if self.role.role == 'Sheriff':
-                    await self.check()
-                    await asyncio.sleep(1)
-                elif self.role.role == 'Mafia':
-                    await self.kill()
-                    await asyncio.sleep(1)
-                await self.end_night()
-                await asyncio.sleep(1)
-                self.time = 'day'
-            elif self.time == 'day':
-                await self.vote()
-                await asyncio.sleep(1)
-                await self.end_day()
-                await asyncio.sleep(1)
-                self.time = 'night'
-        if not self.game_end:
-            logging.info(self.name + ': Too many iterations, game ended.')
+        # if not await self.want_to_start():
+        #     exit()
+        # await self.get_players()
+        # await asyncio.sleep(3)
+        for i in range(3):
+            await self.send_to_chat()
+        # for i in range(50):
+        #     if not self.is_alive or self.game_end:
+        #         break
+        #     if self.time == 'night':
+        #         if self.role.role == 'Sheriff':
+        #             await self.check()
+        #             await asyncio.sleep(1)
+        #         elif self.role.role == 'Mafia':
+        #             await self.kill()
+        #             await asyncio.sleep(1)
+        #         await self.end_night()
+        #         await asyncio.sleep(1)
+        #         self.time = 'day'
+        #     elif self.time == 'day':
+        #         await self.vote()
+        #         await asyncio.sleep(1)
+        #         await self.end_day()
+        #         await asyncio.sleep(1)
+        #         self.time = 'night'
+        # if not self.game_end:
+        #     logging.info(self.name + ': Too many iterations, game ended.')
 
 
     async def get_messages(self):
@@ -137,10 +147,41 @@ class RandomPlayer:
                 self.game_end = True
                 break
 
+    async def send_to_chat(self):
+        logging.info(self.name + ': send message to chat: "' + 'hello' +'"')
+        # print('send to CHAT' + self.name)
+        request = await self.stub.Chat(engine_pb2.ChatRequest(name=self.name, message=self.name + ':' + 'hello!'))
+        print(request.result)
+    
+    async def chat(self):
+        # Perform connection
+        connection = await connect('127.0.0.1')
+ 
+        async with connection:
+            # Creating a channel
+            channel = await connection.channel()
+            await channel.set_qos(prefetch_count=1)
+ 
+            logs_exchange = await channel.declare_exchange(
+                "logs", ExchangeType.FANOUT,
+            )
+ 
+            # Declaring queue
+            queue = await channel.declare_queue(exclusive=True)
+ 
+            # Binding the queue to the exchange
+            await queue.bind(logs_exchange)
+ 
+            # Start listening the queue
+            await queue.consume(on_message)
+ 
+            print(" [*] Waiting for logs. To exit press CTRL+C")
+            await asyncio.Future()
+
 async def main() -> None:
     time.sleep(7)
     name = ''.join(random.choice(string.ascii_uppercase) for _ in range(7)) # https://stackoverflow.com/questions/2030053/how-to-generate-random-strings-in-python
-    async with grpc.aio.insecure_channel('172.18.0.2:50051', options=(('grpc.enable_http_proxy', 0),)) as channel:
+    async with grpc.aio.insecure_channel('127.0.0.1:50050', options=(('grpc.enable_http_proxy', 0),)) as channel:
         stub =  engine_pb2_grpc.EngineServerStub(channel)
         player = RandomPlayer(stub)
         if not await player.join():
@@ -149,7 +190,8 @@ async def main() -> None:
         await player.get_players()
         await asyncio.gather(
             player.start_game(),
-            player.get_messages()
+            # player.get_messages(),
+            player.chat()
         )
         
 

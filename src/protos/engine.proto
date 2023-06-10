@@ -22,6 +22,8 @@ service EngineServer {
     rpc PublishSheriffChecks(PublishRequest) returns (PublishResponse) {}
 
     rpc GameInfo(InfoRequest) returns (stream InfoResponse) {}
+
+    rpc Chat(ChatRequest) returns (ChatResponse) {}
 }
 
 message JoinRequest {
@@ -140,5 +142,15 @@ message PublishRequest {
 
 message PublishResponse {
     bool result = 1;
+    optional string text = 2;
+}
+
+message ChatRequest {
+    string name = 1;
+    string message = 2;
+}
+ 
+message ChatResponse {
+    optional bool result = 1;
     optional string text = 2;
 }

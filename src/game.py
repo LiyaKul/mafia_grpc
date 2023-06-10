@@ -1,6 +1,12 @@
 from enum import Enum
 import random
-
+import sys
+sys.path.append('./.')
+sys.path.append('.')
+sys.path.append('./.')
+sys.path.append('../.')
+sys.path.append('../../.')
+sys.path.append('../../../.')
 import protos.engine_pb2 as engine_pb2
 
 class State(Enum):

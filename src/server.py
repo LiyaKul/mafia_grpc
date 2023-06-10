@@ -4,9 +4,12 @@ import logging
 import asyncio
 from typing import AsyncIterable
 import os
-
+import sys
+sys.path.append('protos/.')
 import protos.engine_pb2 as engine_pb2
 import protos.engine_pb2_grpc as engine_pb2_grpc
+from aio_pika import ExchangeType, connect
+from aio_pika.abc import AbstractIncomingMessage
 
 from game import *
 
@@ -141,6 +144,26 @@ class EngineServer(engine_pb2_grpc.EngineServer):
                 type=message.type,
                 text=message.text
             )
+
+    async def Chat(self, request: engine_pb2.ChatRequest, unused_context):
+        game_id = self.get_game(request.name).id
+        connection = await connect('127.0.0.1')
+ 
+        async with connection:
+            # Creating a channel
+            channel = await connection.channel()
+ 
+            logs_exchange = await channel.declare_exchange(
+                "logs", ExchangeType.FANOUT,
+            )
+            message = Message(
+                message_body,
+                delivery_mode=DeliveryMode.PERSISTENT,
+            )
+            await logs_exchange.publish(message, routing_key="info")
+            print(f" [x] Sent {message!r}")
+        connection.close()
+        return engine_pb2.ChatResponse(result=True)
     
     async def Kill(self, request: engine_pb2.KillRequest, unused_context) -> engine_pb2.KillResponse:
         if not self.check_game(request.name):
@@ -296,7 +319,7 @@ async def serve():
     engine_pb2_grpc.add_EngineServerServicer_to_server(
         EngineServer(), server)
     
-    server.add_insecure_port('172.18.0.2:50051')
+    server.add_insecure_port('127.0.0.1:50050')
     logging.info("Starting server")
     await server.start()
     await server.wait_for_termination()

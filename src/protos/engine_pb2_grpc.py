@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import protos.engine_pb2 as engine__pb2
+import engine_pb2 as engine__pb2
 
 
 class EngineServerStub(object):
@@ -68,6 +68,11 @@ class EngineServerStub(object):
                 '/EngineServer/GameInfo',
                 request_serializer=engine__pb2.InfoRequest.SerializeToString,
                 response_deserializer=engine__pb2.InfoResponse.FromString,
+                )
+        self.Chat = channel.unary_unary(
+                '/EngineServer/Chat',
+                request_serializer=engine__pb2.ChatRequest.SerializeToString,
+                response_deserializer=engine__pb2.ChatResponse.FromString,
                 )
 
 
@@ -140,6 +145,12 @@ class EngineServerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Chat(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_EngineServerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -197,6 +208,11 @@ def add_EngineServerServicer_to_server(servicer, server):
                     servicer.GameInfo,
                     request_deserializer=engine__pb2.InfoRequest.FromString,
                     response_serializer=engine__pb2.InfoResponse.SerializeToString,
+            ),
+            'Chat': grpc.unary_unary_rpc_method_handler(
+                    servicer.Chat,
+                    request_deserializer=engine__pb2.ChatRequest.FromString,
+                    response_serializer=engine__pb2.ChatResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -392,5 +408,22 @@ class EngineServer(object):
         return grpc.experimental.unary_stream(request, target, '/EngineServer/GameInfo',
             engine__pb2.InfoRequest.SerializeToString,
             engine__pb2.InfoResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Chat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/EngineServer/Chat',
+            engine__pb2.ChatRequest.SerializeToString,
+            engine__pb2.ChatResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

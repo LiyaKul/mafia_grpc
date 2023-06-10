@@ -4,6 +4,22 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class ChatRequest(_message.Message):
+    __slots__ = ["message", "name"]
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    message: str
+    name: str
+    def __init__(self, name: _Optional[str] = ..., message: _Optional[str] = ...) -> None: ...
+
+class ChatResponse(_message.Message):
+    __slots__ = ["result", "text"]
+    RESULT_FIELD_NUMBER: _ClassVar[int]
+    TEXT_FIELD_NUMBER: _ClassVar[int]
+    result: bool
+    text: str
+    def __init__(self, result: bool = ..., text: _Optional[str] = ...) -> None: ...
+
 class CheckRequest(_message.Message):
     __slots__ = ["check_name", "name", "text"]
     CHECK_NAME_FIELD_NUMBER: _ClassVar[int]

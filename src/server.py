@@ -296,7 +296,7 @@ async def serve():
     engine_pb2_grpc.add_EngineServerServicer_to_server(
         EngineServer(), server)
     
-    server.add_insecure_port('MAFIA:50051')
+    server.add_insecure_port('0.0.0.0:50051')
     logging.info("Starting server")
     await server.start()
     await server.wait_for_termination()

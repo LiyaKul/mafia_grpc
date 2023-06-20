@@ -140,7 +140,7 @@ class RandomPlayer:
 async def main() -> None:
     time.sleep(7)
     name = ''.join(random.choice(string.ascii_uppercase) for _ in range(7)) # https://stackoverflow.com/questions/2030053/how-to-generate-random-strings-in-python
-    async with grpc.aio.insecure_channel('MAFIA:50051', options=(('grpc.enable_http_proxy', 0),)) as channel:
+    async with grpc.aio.insecure_channel('0.0.0.0:50051', options=(('grpc.enable_http_proxy', 0),)) as channel:
         stub =  engine_pb2_grpc.EngineServerStub(channel)
         player = RandomPlayer(stub)
         if not await player.join():

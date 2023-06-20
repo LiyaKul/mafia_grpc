@@ -173,7 +173,7 @@ class Player:
                 break
 
 async def main() -> None:
-    async with grpc.aio.insecure_channel('MAFIA:50051') as channel:
+    async with grpc.aio.insecure_channel('0.0.0.0:50051') as channel:
         stub =  engine_pb2_grpc.EngineServerStub(channel)
         print('Enter your name.')
         name = input()
